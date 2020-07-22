@@ -1,0 +1,3 @@
+rootProject.name='BlueTools'
+include ':app', ':blelib', ':blue'
+
