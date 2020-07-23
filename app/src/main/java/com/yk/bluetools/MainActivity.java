@@ -135,6 +135,11 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                 }
 
                 @Override
+                public void connectFail() {
+
+                }
+
+                @Override
                 public void disConnected() {
 
                 }
@@ -150,9 +155,15 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                 }
 
                 @Override
-                public void obdFail() {
+                public void blueOpen() {
 
                 }
+
+                @Override
+                public void blueClose() {
+
+                }
+
             });
     }
 

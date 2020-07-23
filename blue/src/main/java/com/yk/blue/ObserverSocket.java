@@ -6,4 +6,5 @@ public interface ObserverSocket {
     void receiveBefore();
     boolean receive(byte[] data);
     void disConnected();
+    void connectFail();
 }

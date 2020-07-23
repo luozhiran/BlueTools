@@ -29,6 +29,7 @@ public class SocketIm extends Thread {
 
     @Override
     public void run() {
+        Log.e("blue", "执行线程----------");
         synchronized (mBluetoothSocketDevice) {
             STATE = START;
             boolean connectResult = connect(mBluetoothSocketDevice);
@@ -37,7 +38,7 @@ public class SocketIm extends Thread {
             } else {
                 STATE = ERROR;
                 if (mOnConnectListener != null)
-                    mOnConnectListener.onError("retry connect still failed");
+                    mOnConnectListener.connectFail();
             }
         }
     }
@@ -51,7 +52,11 @@ public class SocketIm extends Thread {
      */
     private boolean connect(BluetoothSocket bluetoothSocket) {
         try {
-            bluetoothSocket.connect();
+            if (!bluetoothSocket.isConnected()) {
+                Log.e("blue", "开始连接----------");
+                bluetoothSocket.connect();
+            }
+            Log.e("blue", "连接成功----------");
             return true;
         } catch (IOException e) {
             e.printStackTrace();
@@ -69,6 +74,11 @@ public class SocketIm extends Thread {
             } catch (Exception e1) {
                 e1.printStackTrace();
                 Log.e("SocketIm", "retry connect still failed.......");
+                try {
+                    bluetoothSocket.close();
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
                 return false;
             }
         }
@@ -94,8 +104,8 @@ public class SocketIm extends Thread {
         }
         int bytes;
         byte[] buffer = new byte[1024];
-        while (connect) {
-            try {
+        try {
+            while (connect) {
                 //读取数据
                 mIsInterrupt = true;
                 bytes = inputStream.read(buffer);
@@ -106,17 +116,16 @@ public class SocketIm extends Thread {
                         throw new Exception("释放资源");
                     }
                 }
-            } catch (Exception e) {
-                Log.e("SocketIm", "read data occur error........" + e.getMessage());
-                mIsInterrupt = false;
-                release();
-                STATE = ERROR;
-                break;
             }
+        } catch (Exception e) {
+            Log.e("SocketIm", "read data occur error........" + e.getMessage());
+            STATE = ERROR;
+        } finally {
+            release();
+            mIsInterrupt = false;
+            STATE = FINISH;
         }
 
-        mIsInterrupt = false;
-        STATE = FINISH;
     }
 
 

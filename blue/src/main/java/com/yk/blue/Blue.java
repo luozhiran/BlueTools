@@ -105,20 +105,19 @@ public class Blue {
 
             @Override
             public void blueOff() {
-                Log.e("blue", "蓝牙关闭");
+                if (observerBlueResult != null) {
+                    observerBlueResult.blueClose();
+                }
+
                 Blue.this.stopScan();
             }
 
             @Override
             public void blueOn() {
-                mHandler.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        startBlue("");
-                    }
-                }, 1000);
+                if (observerBlueResult != null) {
+                    observerBlueResult.blueOpen();
+                }
 
-                Log.e("blue", "蓝牙打开");
             }
         });
         mPair.setOnOBDListener(new OnOBDListener() {
@@ -151,11 +150,12 @@ public class Blue {
             }
 
             @Override
-            public void obdFail() {
+            public void connectFail() {
                 if (observerBlueResult != null) {
-                    observerBlueResult.obdFail();
+                    observerBlueResult.connectFail();
                 }
             }
+
         });
     }
 

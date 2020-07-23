@@ -40,6 +40,12 @@ public class BlueTest {
             }
 
             @Override
+            public void connectFail() {
+                Log.e("MainActivity", " obd连接失败");
+                observerBlueResult.connectFail();
+            }
+
+            @Override
             public void disConnected() {
                 Log.e("MainActivity", "obd断开连接");
                 observerBlueResult.disConnected();
@@ -47,20 +53,26 @@ public class BlueTest {
 
             @Override
             public void error(String msg) {
-                Log.e("MainActivity", "obd 错误 "+msg);
+                Log.e("MainActivity", "obd 错误 " + msg);
                 observerBlueResult.error(msg);
             }
 
             @Override
             public void receive(String msg) {
-                Log.e("MainActivity", " "+msg);
+                Log.e("MainActivity", " " + msg);
                 observerBlueResult.receive(msg);
             }
 
+
+
             @Override
-            public void obdFail() {
-                Log.e("MainActivity", " obd连接失败");
-                observerBlueResult.obdFail();
+            public void blueOpen() {
+                Log.e("blue", "蓝牙打开");
+            }
+
+            @Override
+            public void blueClose() {
+                Log.e("blue", "蓝牙关闭");
             }
         });
     }
@@ -69,7 +81,7 @@ public class BlueTest {
     public void start(Activity activity, int requestCode) {
         blue.register(activity);
         if (!blue.needOpenLocation(activity, requestCode)) {
-            blue.startBlue("00:1D:A5:68:98:8B");
+            blue.startBlue("");//"00:1D:A5:68:98:8B"
         }
     }
 

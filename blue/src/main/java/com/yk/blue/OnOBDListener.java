@@ -9,5 +9,7 @@ public interface OnOBDListener {
 
     void receive(String msg);
 
-    void obdFail();
+    void connectFail();
+
+
 }

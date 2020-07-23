@@ -11,11 +11,18 @@ public interface ObserverBlueResult {
 
     void connected();
 
+    void connectFail();
+
     void disConnected();
 
     void error(String msg);
 
     void receive(String msg);
 
-    void obdFail();
+
+    void blueOpen();
+
+    void blueClose();
+
+
 }

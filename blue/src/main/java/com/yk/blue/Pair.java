@@ -18,6 +18,7 @@ public class Pair {
 //        ClsUtils.setPairingConfirmation(device.getClass(), device, true);
 //        ClsUtils.setPin(device.getClass(), device, pin);
         BluetoothSocket bluetoothSocket = device.createRfcommSocketToServiceRecord(UUID.fromString(mUuid));
+        Log.e("blue", "开始连接socket ----------");
         if (mSocketIm != null && !mSocketIm.isRunning()) {
             mSocketIm.close();
             mSocketIm = getSocketIm(bluetoothSocket);
@@ -46,12 +47,16 @@ public class Pair {
             }
 
             @Override
+            public void connectFail() {
+                if (onOBDListener != null) {
+                    onOBDListener.connectFail();
+                }
+            }
+
+            @Override
             public void onError(String msg) {
                 if (onOBDListener != null) {
                     onOBDListener.error(msg);
-                    if (!"使用指令atdpn，获取数据失败".equals(msg)) {
-                        onOBDListener.obdFail();
-                    }
                 }
             }
 
@@ -71,6 +76,7 @@ public class Pair {
                     if (mResult.toString().startsWith("atdpn")) {
                         resultType = mResult.toString().replace(" ", "").substring(5, mResult.length() - 1);
                         onError("使用指令atdpn，获取数据失败");
+
                         sendMsg("0902\r".getBytes());
                         result = false;
                     } else if (resultType != null) {
@@ -83,7 +89,7 @@ public class Pair {
                         result = true;
                     } else {
                         if (onOBDListener != null) {
-                            onOBDListener.obdFail();
+                            onOBDListener.error(mResult.toString());
                         }
                         result = true;
                     }
@@ -98,6 +104,8 @@ public class Pair {
                     onOBDListener.disConnected();
                 }
             }
+
+
         });
     }
 
