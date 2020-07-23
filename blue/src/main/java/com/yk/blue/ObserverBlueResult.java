@@ -24,5 +24,8 @@ public interface ObserverBlueResult {
 
     void blueClose();
 
+    void pairStart(BluetoothDevice device);
+    void pairSuccess(BluetoothDevice device);
+    void pairFail(BluetoothDevice device);
 
 }

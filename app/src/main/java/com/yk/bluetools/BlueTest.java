@@ -74,6 +74,21 @@ public class BlueTest {
             public void blueClose() {
                 Log.e("blue", "蓝牙关闭");
             }
+
+            @Override
+            public void pairStart(BluetoothDevice device) {
+                Log.e("blue", "---------------正在配对");
+            }
+
+            @Override
+            public void pairSuccess(BluetoothDevice device) {
+                Log.e("blue", "----------------配对结束");
+            }
+
+            @Override
+            public void pairFail(BluetoothDevice device) {
+                Log.e("blue", "-----------------取消配对/未配对");
+            }
         });
     }
 

@@ -164,6 +164,21 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
 
                 }
 
+                @Override
+                public void pairStart(BluetoothDevice device) {
+
+                }
+
+                @Override
+                public void pairSuccess(BluetoothDevice device) {
+
+                }
+
+                @Override
+                public void pairFail(BluetoothDevice device) {
+
+                }
+
             });
     }
 

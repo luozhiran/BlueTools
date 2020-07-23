@@ -46,16 +46,40 @@ public class Blue {
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
             BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-            if ("android.bluetooth.device.action.PAIRING_REQUEST".equals(action)) {
-                abortBroadcast();
-                if (mPareBluetoothDevice != null && mPareBluetoothDevice.getAddress().equals(device.getAddress())) {
-                    try {
-                        mPair.pair(device, "1234");
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+            if (BluetoothDevice.ACTION_PAIRING_REQUEST.equals(action)) {//对华为手机不支持
+//                abortBroadcast();
+//                if (mPareBluetoothDevice != null && mPareBluetoothDevice.getAddress().equals(device.getAddress())) {
+//                    try {
+//                        mPair.pair(device, "1234",false);
+//                    } catch (Exception e) {
+//                        e.printStackTrace();
+//                    }
+//                }
+            } else if (BluetoothDevice.ACTION_BOND_STATE_CHANGED.equals(action)) {
+                switch (device.getBondState()) {
+                    case BluetoothDevice.BOND_BONDING:
+                        if (observerBlueResult != null) {
+                            observerBlueResult.pairStart(device);
+                        }
+                        //正在配对
+
+                        break;
+                    case BluetoothDevice.BOND_BONDED:
+                        //配对结束
+                        if (observerBlueResult != null) {
+                            observerBlueResult.pairSuccess(device);
+                        }
+
+                        break;
+                    case BluetoothDevice.BOND_NONE:
+                        //取消配对/未配对
+                        if (observerBlueResult != null) {
+                            observerBlueResult.pairFail(device);
+                        }
+
+                    default:
+                        break;
                 }
-                Log.e("blue", "开始配对");
             }
         }
     };
@@ -77,7 +101,8 @@ public class Blue {
         context.registerReceiver(mBlueBroadcast, intentFilter);
 
         intentFilter = new IntentFilter();
-        intentFilter.addAction("android.bluetooth.device.action.PAIRING_REQUEST");
+        intentFilter.addAction(BluetoothDevice.ACTION_PAIRING_REQUEST);
+        intentFilter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
         context.registerReceiver(broadcastReceiver, intentFilter);
 
         mBlueBroadcast.setBlueCallback(new BlueCallback() {
@@ -188,7 +213,7 @@ public class Blue {
                     try {
                         BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
                         if (device != null) {
-                            mPair.pair(device, "1234");
+                            connectBlueSocket(device);
                         } else {
                             if (!mBluetoothAdapter.isDiscovering()) {
                                 mBluetoothAdapter.startDiscovery();
@@ -238,9 +263,6 @@ public class Blue {
 
     @SuppressLint("MissingPermission")
     public void stopScan() {
-//        if (mBlueBroadcast != null) {
-//            mBlueBroadcast.abortBroadcast();
-//        }
         if (mBluetoothAdapter.isDiscovering()) {
             mBluetoothAdapter.cancelDiscovery();
         }
@@ -248,23 +270,21 @@ public class Blue {
 
     @SuppressLint("MissingPermission")
     public void connect(BluetoothDevice bluetoothDevice, String pin) {
+        stopScan();
         if (bluetoothDevice.getBondState() != BluetoothDevice.BOND_NONE) {
             BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(bluetoothDevice.getAddress());
             try {
                 if (device != null) {
-                    mPair.pair(device, "1234");
+                    connectBlueSocket(device);
                 }
             } catch (Exception e) {
                 Log.e("Blue", "remote device is not bonded (paired)");
                 e.printStackTrace();
             }
         } else {
-            stopScan();
             try {
                 mPareBluetoothDevice = bluetoothDevice;
                 ClsUtils.createBond(bluetoothDevice.getClass(), bluetoothDevice);
-//                mHandler.removeMessages(AUTO_PAIR_FAIL);
-//                mHandler.sendEmptyMessageDelayed(DELAY_TIME, AUTO_PAIR_FAIL);
             } catch (Exception e) {
                 e.printStackTrace();
                 mPareBluetoothDevice = null;
@@ -282,5 +302,9 @@ public class Blue {
         this.observerBlueResult = observerBlueResult;
     }
 
+
+    public void connectBlueSocket(BluetoothDevice device) {
+        mPair.connectDeviceSocket(device);
+    }
 
 }

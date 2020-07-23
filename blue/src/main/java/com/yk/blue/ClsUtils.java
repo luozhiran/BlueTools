@@ -32,10 +32,9 @@ public class ClsUtils {
     static public boolean setPin(Class<? extends BluetoothDevice> btClass, BluetoothDevice btDevice,
                                  String str) throws Exception {
         try {
+
             Method removeBondMethod = btClass.getDeclaredMethod("setPin", new Class[]{byte[].class});
-            Boolean returnValue = (Boolean) removeBondMethod.invoke(btDevice,
-                    new Object[]
-                            {str.getBytes()});
+            Boolean returnValue = (Boolean) removeBondMethod.invoke(btDevice, new Object[]{str.getBytes()});
             Log.e("returnValue", "" + returnValue);
         } catch (SecurityException e) {
             // throw new RuntimeException(e.getMessage());

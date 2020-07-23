@@ -104,8 +104,8 @@ public class SocketIm extends Thread {
         }
         int bytes;
         byte[] buffer = new byte[1024];
-        try {
-            while (connect) {
+        while (connect) {
+            try {
                 //读取数据
                 mIsInterrupt = true;
                 bytes = inputStream.read(buffer);
@@ -116,16 +116,17 @@ public class SocketIm extends Thread {
                         throw new Exception("释放资源");
                     }
                 }
+            } catch (Exception e) {
+                Log.e("SocketIm", "read data occur error........" + e.getMessage());
+                mIsInterrupt = false;
+                release();
+                STATE = ERROR;
+                break;
             }
-        } catch (Exception e) {
-            Log.e("SocketIm", "read data occur error........" + e.getMessage());
-            STATE = ERROR;
-        } finally {
-            release();
-            mIsInterrupt = false;
-            STATE = FINISH;
         }
 
+        mIsInterrupt = false;
+        STATE = FINISH;
     }
 
 

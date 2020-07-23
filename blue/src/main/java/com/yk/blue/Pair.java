@@ -3,8 +3,10 @@ package com.yk.blue;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
+import android.os.Build;
 import android.util.Log;
 
+import java.io.IOException;
 import java.util.UUID;
 
 public class Pair {
@@ -13,25 +15,52 @@ public class Pair {
     private StringBuilder mResult = new StringBuilder();
     private String resultType;
     private OnOBDListener onOBDListener;
+    public static final int SEND_SUC = 1;
+    public static final int SEND_FAIL = 2;
+    public static final int NOT_CONNECT_BLUE = 3;
 
-    public void pair(BluetoothDevice device, String pin) throws Exception {
+    /**
+     * 原本通过广播可以一次性配对，并且连接通信，华为v20不支持（没找到解决办法），只能通过弹出框进行配对
+     *
+     * @param device
+     * @param pin
+     * @param isPair
+     */
+    public void pair(BluetoothDevice device, String pin, boolean isPair) {
 //        ClsUtils.setPairingConfirmation(device.getClass(), device, true);
-//        ClsUtils.setPin(device.getClass(), device, pin);
-        BluetoothSocket bluetoothSocket = device.createRfcommSocketToServiceRecord(UUID.fromString(mUuid));
-        Log.e("blue", "开始连接socket ----------");
-        if (mSocketIm != null && !mSocketIm.isRunning()) {
-            mSocketIm.close();
-            mSocketIm = getSocketIm(bluetoothSocket);
-            mSocketIm.start();
-        } else if (mSocketIm == null) {
-            mSocketIm = getSocketIm(bluetoothSocket);
-            mSocketIm.start();
+        if (!isPair) {
+            try {
+                ClsUtils.setPin(device.getClass(), device, pin);
+                connectDeviceSocket(device);
+            } catch (Exception e) {
+                e.printStackTrace();
+                onOBDListener.connectFail();
+            }
         } else {
-            Log.e("blue", "线程执行中");
-            mResult.setLength(0);
-            sendMsg("atdpn\r".getBytes());
+            connectDeviceSocket(device);
         }
+    }
 
+    public void connectDeviceSocket(BluetoothDevice device) {
+        BluetoothSocket bluetoothSocket = null;
+        try {
+            bluetoothSocket = device.createRfcommSocketToServiceRecord(UUID.fromString(mUuid));
+            if (mSocketIm != null && !mSocketIm.isRunning()) {
+                mSocketIm.close();
+                mSocketIm = getSocketIm(bluetoothSocket);
+                mSocketIm.start();
+            } else if (mSocketIm == null) {
+                mSocketIm = getSocketIm(bluetoothSocket);
+                mSocketIm.start();
+            } else {
+                Log.e("blue", "线程执行中");
+                mResult.setLength(0);
+                sendMsg("atdpn\r".getBytes());
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            onOBDListener.connectFail();
+        }
 
     }
 
@@ -63,7 +92,24 @@ public class Pair {
             @Override
             public void receiveBefore() {
                 mResult.setLength(0);
-                sendMsg("atdpn\r".getBytes());
+                int state = sendMsg("atdpn\r".getBytes());
+                switch (state) {
+                    case Pair.NOT_CONNECT_BLUE:
+                        Log.e("blue", "无法发送数据，请先配对");
+                        break;
+                    case Pair.SEND_FAIL:
+                        Log.e("blue", "发送数据失败");
+                        try {
+                            Thread.sleep(500);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        sendMsg("atdpn\r".getBytes());//重新发送一次
+                        break;
+                    case Pair.SEND_SUC:
+                        Log.e("blue", "数据发送成功");
+                        break;
+                }
             }
 
             @Override
@@ -110,19 +156,23 @@ public class Pair {
     }
 
 
-    public void sendMsg(byte[] bytes) {
+    public int sendMsg(byte[] bytes) {
+        int state = SEND_SUC;
         if (!BluetoothAdapter.getDefaultAdapter().isEnabled()) {
-            Log.e("blue", "蓝牙以关闭");
+
+            state = NOT_CONNECT_BLUE;
         } else {
             if (mSocketIm != null) {
                 boolean res = mSocketIm.sendMsg(bytes);
                 if (!res) {
-                    Log.e("blue", "发送数据失败");
+                    state = SEND_FAIL;
                 }
             } else {
-                Log.e("blue", "无法发送数据，请先配对");
+                state = NOT_CONNECT_BLUE;
+
             }
         }
+        return state;
     }
 
 
@@ -163,7 +213,9 @@ public class Pair {
     }
 
     public void release() {
-        mSocketIm.close();
-        mSocketIm = null;
+        if (mSocketIm != null) {
+            mSocketIm.close();
+            mSocketIm = null;
+        }
     }
 }
